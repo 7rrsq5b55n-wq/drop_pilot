@@ -1,0 +1,43 @@
+name: ecoroute_driver
+description: Multi-stop courier routing app (traffic-aware ETAs + eco mode) - starter pack.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Maps + location
+  google_maps_flutter: ^2.6.0
+  geolocator: ^13.0.1
+
+  # Networking
+  http: ^1.2.2
+
+  # Storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Utilities
+  uuid: ^4.4.0
+  intl: ^0.19.0
+  collection: ^1.18.0
+
+  # Import + navigation handoff
+  file_picker: ^8.0.0
+  csv: ^6.0.0
+  url_launcher: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
