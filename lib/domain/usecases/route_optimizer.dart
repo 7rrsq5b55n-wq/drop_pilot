@@ -71,7 +71,8 @@ class RouteOptimizer {
     if (route.length < 4) return route;
 
     var best = [...route];
-    var bestDist = _routeDistance(best, originLat: originLat, originLng: originLng);
+    var bestDist =
+        _routeDistance(best, originLat: originLat, originLng: originLng);
 
     for (var pass = 0; pass < maxPasses; pass++) {
       var improved = false;
@@ -79,8 +80,8 @@ class RouteOptimizer {
       for (var i = 0; i < best.length - 2; i++) {
         for (var k = i + 1; k < best.length - 1; k++) {
           final candidate = _twoOptSwap(best, i, k);
-          final candDist =
-              _routeDistance(candidate, originLat: originLat, originLng: originLng);
+          final candDist = _routeDistance(candidate,
+              originLat: originLat, originLng: originLng);
 
           if (candDist + 0.5 < bestDist) {
             best = candidate;

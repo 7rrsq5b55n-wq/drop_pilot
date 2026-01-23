@@ -61,8 +61,7 @@ class SettingsScreen extends ConsumerWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
-              for (final vt in VehicleType.values)
-                _FactorTile(vehicleType: vt),
+              for (final vt in VehicleType.values) _FactorTile(vehicleType: vt),
               const SizedBox(height: 12),
             ],
           );
@@ -106,7 +105,8 @@ class _FactorTile extends ConsumerWidget {
               title: Text('Override ${vehicleType.name.toUpperCase()} factor'),
               content: TextField(
                 controller: input,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(
                   labelText: 'kg CO₂ per km',
                 ),

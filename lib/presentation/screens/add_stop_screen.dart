@@ -81,8 +81,9 @@ class _AddStopScreenState extends ConsumerState<AddStopScreen> {
                     labelText: 'Address *',
                     hintText: 'House number, street, city, postcode',
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Address required' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Address required'
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(

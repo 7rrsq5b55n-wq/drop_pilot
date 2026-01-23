@@ -43,6 +43,26 @@ class GoogleMapsApi {
   static const _directionsBase =
       'https://maps.googleapis.com/maps/api/directions/json';
 
+  String get _key => Env.googleMapsApiKey.trim();
+
+  void _validateLatLng(LatLng p, {required String label}) {
+    if (p.latitude.isNaN || p.longitude.isNaN) {
+      throw Exception('Invalid coordinates ($label): NaN');
+    }
+    if (p.latitude < -90 ||
+        p.latitude > 90 ||
+        p.longitude < -180 ||
+        p.longitude > 180) {
+      throw Exception(
+          'Invalid coordinates ($label): ${p.latitude},${p.longitude}');
+    }
+    // Common bad default that causes ZERO_RESULTS downstream
+    if (p.latitude == 0.0 && p.longitude == 0.0) {
+      throw Exception(
+          'Invalid coordinates ($label): 0,0 (likely not geocoded yet)');
+    }
+  }
+
   Future<GeocodeResult> geocodeAddress(String address) async {
     if (!Env.hasGoogleMapsApiKey) {
       throw Exception(
@@ -52,7 +72,7 @@ class GoogleMapsApi {
 
     final uri = Uri.parse(_geocodeBase).replace(queryParameters: {
       'address': address,
-      'key': Env.googleMapsApiKey,
+      'key': _key,
     });
 
     final resp = await _client.get(uri);
@@ -64,16 +84,16 @@ class GoogleMapsApi {
     final status = data['status'] as String?;
     if (status != 'OK') {
       final err = data['error_message'] as String?;
-      throw Exception('Geocoding error: $status${err != null ? ' - $err' : ''}');
+      throw Exception(
+          'Geocoding error: $status${err != null ? ' - $err' : ''}');
     }
 
     final results = (data['results'] as List<dynamic>);
     if (results.isEmpty) throw Exception('No geocoding results.');
     final first = results.first as Map<String, dynamic>;
     final formatted = first['formatted_address'] as String? ?? address;
-    final location =
-        ((first['geometry'] as Map<String, dynamic>)['location']
-            as Map<String, dynamic>);
+    final location = ((first['geometry'] as Map<String, dynamic>)['location']
+        as Map<String, dynamic>);
     final lat = (location['lat'] as num).toDouble();
     final lng = (location['lng'] as num).toDouble();
 
@@ -83,7 +103,7 @@ class GoogleMapsApi {
   /// Build a multi-stop route with chunking to avoid waypoint limits.
   ///
   /// - origin: current location or depot
-  /// - stopsInOrder: only the remaining stops (not delivered), already ordered
+  /// - stopsInOrder: remaining stops (not delivered), already ordered
   Future<RouteResult> buildMultiStopRoute({
     required LatLng origin,
     required List<LatLng> stopsInOrder,
@@ -97,17 +117,15 @@ class GoogleMapsApi {
       );
     }
 
-    // Google Directions API waypoint limits vary by plan.
+    _validateLatLng(origin, label: 'origin');
+    for (var i = 0; i < stopsInOrder.length; i++) {
+      _validateLatLng(stopsInOrder[i], label: 'stop[$i]');
+    }
+
     // Conservative chunk size: 20 intermediate waypoints.
     const maxIntermediateWaypoints = 20;
 
-    // Turn the stops into segments.
-    // Each segment request:
-    // origin = segmentOrigin
-    // destination = segmentLastStop
-    // waypoints = intermediate stops
     final segments = <List<LatLng>>[];
-
     var cursor = 0;
     while (cursor < stopsInOrder.length) {
       final remaining = stopsInOrder.length - cursor;
@@ -129,8 +147,9 @@ class GoogleMapsApi {
 
     for (final segmentStops in segments) {
       final destination = segmentStops.last;
-      final intermediates =
-          segmentStops.length > 1 ? segmentStops.sublist(0, segmentStops.length - 1) : <LatLng>[];
+      final intermediates = segmentStops.length > 1
+          ? segmentStops.sublist(0, segmentStops.length - 1)
+          : <LatLng>[];
 
       final segmentResult = await _directions(
         origin: segmentOrigin,
@@ -143,17 +162,16 @@ class GoogleMapsApi {
       durationTotal += segmentResult.totalDurationSeconds;
       if (segmentResult.totalDurationInTrafficSeconds != null) {
         durationTrafficTotal ??= 0;
-        durationTrafficTotal =
-            durationTrafficTotal! + segmentResult.totalDurationInTrafficSeconds!;
+        durationTrafficTotal = durationTrafficTotal! +
+            segmentResult.totalDurationInTrafficSeconds!;
       }
 
       if (allPolylinePoints.isEmpty) {
         allPolylinePoints.addAll(segmentResult.polylinePoints);
       } else {
-        // Avoid duplicating the connecting point between segments.
         final toAdd = segmentResult.polylinePoints;
         if (toAdd.isNotEmpty) {
-          allPolylinePoints.addAll(toAdd.skip(1));
+          allPolylinePoints.addAll(toAdd.skip(1)); // de-dupe join point
         }
       }
 
@@ -180,11 +198,13 @@ class GoogleMapsApi {
       );
     }
 
+    _validateLatLng(origin, label: 'origin');
+    _validateLatLng(destination, label: 'destination');
+
     final avoid = <String>[];
     if (settings.avoidTolls) avoid.add('tolls');
     if (settings.avoidHighways) avoid.add('highways');
 
-    // Encode waypoints: "lat,lng|lat,lng"
     final waypoints = intermediates.isEmpty
         ? null
         : intermediates.map((p) => '${p.latitude},${p.longitude}').join('|');
@@ -193,17 +213,13 @@ class GoogleMapsApi {
       'origin': '${origin.latitude},${origin.longitude}',
       'destination': '${destination.latitude},${destination.longitude}',
       'mode': 'driving',
-      // traffic-aware (if your plan supports duration_in_traffic)
       'departure_time': 'now',
-      'key': Env.googleMapsApiKey,
+      'traffic_model': 'best_guess',
+      'key': _key,
     };
 
-    if (avoid.isNotEmpty) {
-      query['avoid'] = avoid.join('|');
-    }
-    if (waypoints != null) {
-      query['waypoints'] = waypoints;
-    }
+    if (avoid.isNotEmpty) query['avoid'] = avoid.join('|');
+    if (waypoints != null) query['waypoints'] = waypoints;
 
     final uri = Uri.parse(_directionsBase).replace(queryParameters: query);
 
@@ -214,9 +230,14 @@ class GoogleMapsApi {
 
     final data = jsonDecode(resp.body) as Map<String, dynamic>;
     final status = data['status'] as String?;
+
     if (status != 'OK') {
       final err = data['error_message'] as String?;
-      throw Exception('Directions error: $status${err != null ? ' - $err' : ''}');
+      final coords =
+          'origin=${origin.latitude},${origin.longitude} dest=${destination.latitude},${destination.longitude}';
+      throw Exception(
+        'Directions error: $status${err != null ? ' - $err' : ''} ($coords)',
+      );
     }
 
     final routes = (data['routes'] as List<dynamic>);
@@ -225,7 +246,8 @@ class GoogleMapsApi {
     final route0 = routes.first as Map<String, dynamic>;
     final overview = route0['overview_polyline'] as Map<String, dynamic>?;
     final pointsStr = overview?['points'] as String?;
-    final polyPoints = (pointsStr == null) ? <LatLng>[] : decodePolyline(pointsStr);
+    final polyPoints =
+        (pointsStr == null) ? <LatLng>[] : decodePolyline(pointsStr);
 
     final legs = (route0['legs'] as List<dynamic>? ?? const []);
     var distance = 0;
@@ -234,8 +256,10 @@ class GoogleMapsApi {
 
     for (final legAny in legs) {
       final leg = legAny as Map<String, dynamic>;
-      distance += ((leg['distance'] as Map<String, dynamic>)['value'] as num).toInt();
-      duration += ((leg['duration'] as Map<String, dynamic>)['value'] as num).toInt();
+      distance +=
+          ((leg['distance'] as Map<String, dynamic>)['value'] as num).toInt();
+      duration +=
+          ((leg['duration'] as Map<String, dynamic>)['value'] as num).toInt();
 
       final dit = leg['duration_in_traffic'];
       if (dit is Map<String, dynamic> && dit['value'] != null) {

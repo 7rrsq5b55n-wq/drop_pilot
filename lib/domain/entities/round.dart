@@ -67,10 +67,7 @@ class Round {
           DateTime.now(),
       startLat: (json['startLat'] as num?)?.toDouble(),
       startLng: (json['startLng'] as num?)?.toDouble(),
-      stops: stopsJson
-          .whereType<Map>()
-          .map((m) => Stop.fromJson(m))
-          .toList(),
+      stops: stopsJson.whereType<Map>().map((m) => Stop.fromJson(m)).toList(),
     );
   }
 }

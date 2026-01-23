@@ -107,7 +107,8 @@ class RoundController extends StateNotifier<AsyncValue<Round>> {
     final newStops = round.stops.where((s) => s.id != stopId).toList();
     // Reindex order
     final reindexed = [
-      for (var i = 0; i < newStops.length; i++) newStops[i].copyWith(orderIndex: i)
+      for (var i = 0; i < newStops.length; i++)
+        newStops[i].copyWith(orderIndex: i)
     ];
 
     final updated = round.copyWith(stops: reindexed);
@@ -169,10 +170,12 @@ class RoundController extends StateNotifier<AsyncValue<Round>> {
 
     // Also reindex delivered (keep order but make indexes 0..delivered-1)
     final fixedDelivered = [
-      for (var i = 0; i < delivered.length; i++) delivered[i].copyWith(orderIndex: i)
+      for (var i = 0; i < delivered.length; i++)
+        delivered[i].copyWith(orderIndex: i)
     ];
 
-    final updated = round.copyWith(stops: [...fixedDelivered, ...merged.sublist(delivered.length)]);
+    final updated = round.copyWith(
+        stops: [...fixedDelivered, ...merged.sublist(delivered.length)]);
     await repo.saveRound(updated);
     state = AsyncData(updated);
   }

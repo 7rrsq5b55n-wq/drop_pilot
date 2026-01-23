@@ -89,7 +89,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 if (_error != null) ...[
                   Text(
                     _error!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
                   const SizedBox(height: 12),
                 ],

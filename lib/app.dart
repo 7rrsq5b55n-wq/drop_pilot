@@ -8,11 +8,11 @@ class EcoRouteApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'EcoRoute Driver',
+      title: 'Drop Pilot',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: Colors.green,
+        colorSchemeSeed: Colors.blue, // optional: change branding color
       ),
       home: const OnboardingScreen(),
     );

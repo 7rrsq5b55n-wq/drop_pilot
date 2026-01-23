@@ -63,7 +63,8 @@ final roundsControllerProvider =
 });
 
 final roundControllerProvider =
-    StateNotifierProvider.family<RoundController, AsyncValue<Round>, String>((ref, id) {
+    StateNotifierProvider.family<RoundController, AsyncValue<Round>, String>(
+        (ref, id) {
   return RoundController(
     roundId: id,
     repo: ref.watch(roundRepositoryProvider),
@@ -74,9 +75,8 @@ final roundControllerProvider =
   )..load();
 });
 
-final routeControllerProvider =
-    StateNotifierProvider.autoDispose.family<RouteController, RouteState, String>(
-        (ref, roundId) {
+final routeControllerProvider = StateNotifierProvider.autoDispose
+    .family<RouteController, RouteState, String>((ref, roundId) {
   return RouteController(
     ref: ref,
     roundId: roundId,

@@ -3,14 +3,14 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/env.dart';
 import '../../core/utils/formatters.dart';
 import '../../domain/entities/stop.dart';
-import '../providers.dart';
 import '../controllers/route_controller.dart';
+import '../providers.dart';
 import 'add_stop_screen.dart';
 import 'settings_screen.dart';
 import 'stop_detail_screen.dart';
@@ -105,8 +105,32 @@ class _RoundScreenState extends ConsumerState<RoundScreen>
   }
 
   Future<void> _navigateToStop(Stop stop) async {
-    final uri = _navigationUri(stop.lat, stop.lng);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+    // Guard against bad coordinates (a common cause of routing errors).
+    final lat = stop.lat;
+    final lng = stop.lng;
+
+    final coordsValid = lat.isFinite &&
+        lng.isFinite &&
+        lat.abs() <= 90 &&
+        lng.abs() <= 180 &&
+        !(lat == 0 && lng == 0);
+
+    if (!coordsValid) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'This stop has invalid coordinates. Please re-geocode: ${stop.address}',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final uri = _navigationUri(lat, lng);
+
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open navigation app.')),
@@ -116,10 +140,10 @@ class _RoundScreenState extends ConsumerState<RoundScreen>
 
   Uri _navigationUri(double lat, double lng) {
     if (Platform.isIOS) {
-      // Apple Maps
+      // Apple Maps (uses current location by default as origin)
       return Uri.parse('http://maps.apple.com/?daddr=$lat,$lng&dirflg=d');
     }
-    // Default: Google Maps
+    // Google Maps URL (uses current location by default as origin)
     return Uri.parse(
       'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving',
     );
@@ -177,8 +201,8 @@ class _RoundScreenState extends ConsumerState<RoundScreen>
                 roundId: widget.roundId,
                 onImportCsv: _importCsv,
                 onPasteAddresses: _pasteAddresses,
-                onOpenStop: (stop) {
-                  Navigator.of(context).push(
+                onOpenStop: (stop) async {
+                  final result = await Navigator.of(context).push<String?>(
                     MaterialPageRoute(
                       builder: (_) => StopDetailScreen(
                         roundId: widget.roundId,
@@ -186,6 +210,31 @@ class _RoundScreenState extends ConsumerState<RoundScreen>
                       ),
                     ),
                   );
+
+                  if (!context.mounted) return;
+
+                  // StopDetailScreen should return this token after status update
+                  if (result == 'NAVIGATE_NEXT') {
+                    final next = round.nextStop;
+                    if (next == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Round complete ✅')),
+                      );
+                      return;
+                    }
+
+                    // Keep the order fresh (optional but matches your “end-to-end” intent)
+                    await ref
+                        .read(roundControllerProvider(widget.roundId).notifier)
+                        .optimizeRemainingStops();
+
+                    // Refresh polylines/ETA
+                    await ref
+                        .read(routeControllerProvider(widget.roundId).notifier)
+                        .refresh(force: true);
+
+                    await _navigateToStop(next);
+                  }
                 },
                 onNavigate: _navigateToStop,
               ),
@@ -197,6 +246,15 @@ class _RoundScreenState extends ConsumerState<RoundScreen>
                 onNavigateNext: () async {
                   final next = round.nextStop;
                   if (next == null) return;
+
+                  await ref
+                      .read(roundControllerProvider(widget.roundId).notifier)
+                      .optimizeRemainingStops();
+
+                  await ref
+                      .read(routeControllerProvider(widget.roundId).notifier)
+                      .refresh(force: true);
+
                   await _navigateToStop(next);
                 },
               ),
@@ -244,8 +302,10 @@ class _StopsTab extends ConsumerWidget {
   final String roundId;
   final VoidCallback onImportCsv;
   final VoidCallback onPasteAddresses;
-  final void Function(Stop stop) onOpenStop;
-  final void Function(Stop stop) onNavigate;
+
+  // Use Future callbacks so we can await internally when needed.
+  final Future<void> Function(Stop stop) onOpenStop;
+  final Future<void> Function(Stop stop) onNavigate;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -280,7 +340,7 @@ class _StopsTab extends ConsumerWidget {
                       await ref
                           .read(roundControllerProvider(roundId).notifier)
                           .optimizeRemainingStops();
-                      // Trigger route refresh
+
                       await ref
                           .read(routeControllerProvider(roundId).notifier)
                           .refresh(force: true);
@@ -302,21 +362,28 @@ class _StopsTab extends ConsumerWidget {
                     )
                   : ListView.separated(
                       itemCount: stops.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      separatorBuilder: (context, _) =>
+                          const Divider(height: 1),
                       itemBuilder: (context, i) {
                         final s = stops[i];
                         return ListTile(
                           leading: _StatusDot(status: s.status),
-                          title: Text(s.name?.trim().isNotEmpty == true
-                              ? s.name!
-                              : s.address),
+                          title: Text(
+                            s.name?.trim().isNotEmpty == true
+                                ? s.name!
+                                : s.address,
+                          ),
                           subtitle: Text(s.address),
                           trailing: IconButton(
                             tooltip: 'Navigate',
                             icon: const Icon(Icons.navigation),
-                            onPressed: () => onNavigate(s),
+                            onPressed: () {
+                              onNavigate(s); // ignore returned Future
+                            },
                           ),
-                          onTap: () => onOpenStop(s),
+                          onTap: () {
+                            onOpenStop(s); // ignore returned Future
+                          },
                         );
                       },
                     ),
@@ -367,7 +434,9 @@ class _MapTab extends ConsumerWidget {
   final GoogleMapController? mapController;
   final void Function(GoogleMapController controller) onMapCreated;
   final RouteState routeState;
-  final VoidCallback onNavigateNext;
+
+  // We accept async callback and ignore its Future in onPressed.
+  final Future<void> Function() onNavigateNext;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -412,7 +481,9 @@ class _MapTab extends ConsumerWidget {
         };
 
         LatLng initial = const LatLng(51.509865, -0.118092); // default London
-        if (stops.isNotEmpty) initial = LatLng(stops.first.lat, stops.first.lng);
+        if (stops.isNotEmpty) {
+          initial = LatLng(stops.first.lat, stops.first.lng);
+        }
 
         return Stack(
           children: [
@@ -451,11 +522,17 @@ class _MapTab extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text('Distance: ${formatDistance(routeState.totalDistanceMeters)}'),
-                      Text('ETA: ${formatDuration(routeState.totalDurationSeconds)}'
-                          '${routeState.totalDurationInTrafficSeconds != null ? ' (traffic: ${formatDuration(routeState.totalDurationInTrafficSeconds!)})' : ''}'),
+                      Text(
+                        'Distance: ${formatDistance(routeState.totalDistanceMeters)}',
+                      ),
+                      Text(
+                        'ETA: ${formatDuration(routeState.totalDurationSeconds)}'
+                        '${routeState.totalDurationInTrafficSeconds != null ? ' (traffic: ${formatDuration(routeState.totalDurationInTrafficSeconds!)})' : ''}',
+                      ),
                       if (routeState.co2Kg != null)
-                        Text('Estimated CO₂: ${routeState.co2Kg!.toStringAsFixed(2)} kg (estimate)'),
+                        Text(
+                          'Estimated CO₂: ${routeState.co2Kg!.toStringAsFixed(2)} kg (estimate)',
+                        ),
                       if (settings != null)
                         Text(
                           'Mode: ${settings.ecoMode ? 'Eco' : 'Standard'}'
@@ -476,7 +553,9 @@ class _MapTab extends ConsumerWidget {
                       Row(
                         children: [
                           ElevatedButton.icon(
-                            onPressed: onNavigateNext,
+                            onPressed: () {
+                              onNavigateNext(); // ignore returned Future
+                            },
                             icon: const Icon(Icons.navigation),
                             label: const Text('Navigate next'),
                           ),

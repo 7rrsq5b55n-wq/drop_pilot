@@ -122,7 +122,8 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => RoundScreen(roundId: r.id)),
+                    MaterialPageRoute(
+                        builder: (_) => RoundScreen(roundId: r.id)),
                   );
                 },
               );

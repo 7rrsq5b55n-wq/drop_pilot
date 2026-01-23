@@ -71,14 +71,16 @@ class RouteController extends StateNotifier<RouteState> {
     required this.locationService,
   }) : super(const RouteState()) {
     // Refresh when the round changes.
-    ref.listen<AsyncValue<Round>>(roundControllerProvider(roundId), (prev, next) {
+    ref.listen<AsyncValue<Round>>(roundControllerProvider(roundId),
+        (prev, next) {
       if (next.hasValue) {
         refresh();
       }
     });
 
     // Refresh when settings change.
-    ref.listen<AsyncValue<AppSettings>>(settingsControllerProvider, (prev, next) {
+    ref.listen<AsyncValue<AppSettings>>(settingsControllerProvider,
+        (prev, next) {
       if (next.hasValue) {
         refresh();
       }
@@ -143,9 +145,8 @@ class RouteController extends StateNotifier<RouteState> {
           ? _settings.copyWith(avoidHighways: true)
           : _settings;
 
-      final stopsLatLng = remaining
-          .map((s) => LatLng(s.lat, s.lng))
-          .toList(growable: false);
+      final stopsLatLng =
+          remaining.map((s) => LatLng(s.lat, s.lng)).toList(growable: false);
 
       final route = await api.buildMultiStopRoute(
         origin: origin,

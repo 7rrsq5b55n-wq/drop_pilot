@@ -90,7 +90,8 @@ class StopCsvParser {
     return map;
   }
 
-  String? _getByHeader(List<String> row, Map<String, int> headerMap, String key) {
+  String? _getByHeader(
+      List<String> row, Map<String, int> headerMap, String key) {
     final idx = headerMap[key];
     if (idx == null) return null;
     if (idx < 0 || idx >= row.length) return null;

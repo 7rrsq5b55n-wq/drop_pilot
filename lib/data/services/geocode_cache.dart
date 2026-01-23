@@ -47,10 +47,8 @@ class GeocodeCache {
   final Duration ttl = const Duration(days: 30);
 
   String _keyFor(String address) {
-    final normalized = address
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'\s+'), ' ');
+    final normalized =
+        address.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
     return normalized;
   }
 
