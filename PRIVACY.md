@@ -1,52 +1,83 @@
-# Drop Pilot Privacy Policy
+MRVL Technologies Apps Privacy Policy (General)
 
-**Last updated:** 2026-01-23
+Last updated: 2026-02-16
 
-Drop Pilot (“the App”) helps delivery drivers plan and navigate multi-stop routes. This policy explains what data the App collects, how it is used, and your choices.
+MRVL Technologies (“we”, “us”) develops mobile applications (each an “App”). This Privacy Policy explains what information our Apps may collect, how it is used, and your choices. Some features vary by App; where applicable, additional product-specific details are provided below.
 
-## 1. Data We Collect
-The App may collect or process the following data to provide core functionality:
+1. Information We Collect
 
-### Location Data
-- **Precise location (foreground):** Used to show your position on the map and to calculate routes.
-- **Location (background, if enabled):** Used to continue route tracking while the App is not in the foreground (only if you grant permission and background location is enabled on your device).
+Depending on the App features you use, we may collect or process:
 
-### Route & Stop Data (User-Provided)
-- Addresses and stop details you add (manually, pasted list, or CSV import).
-- Delivery status (e.g., pending/delivered/failed/skipped).
-- Optional notes or phone numbers you enter for a stop.
+Account & Profile Information
+	•	Email address, password, and/or authentication credentials
+	•	Profile details you provide (e.g., name, organization/university/community affiliation, user role such as member/admin)
 
-### Diagnostics (Limited)
-- Basic error logs may appear on your device during development/testing (e.g., debug console).  
-- The production App is intended to avoid collecting personal diagnostics beyond what Apple provides by default unless you explicitly add crash/analytics tooling.
+User Content
+	•	Content you create, upload, or submit (e.g., messages, posts, comments, reports, files)
+	•	Photos, videos, and related metadata (e.g., captions) when media features are enabled
 
-## 2. How We Use Data
-We use your data only to:
-- Display maps and your current location
-- Generate route directions and estimated time/distance (including traffic-aware estimates where supported)
-- Help you manage stops and delivery status
-- Improve reliability (bug fixing)
+Usage Data (Analytics)
+	•	App interaction data (e.g., screens viewed, feature usage, session duration)
+	•	Device and app information (e.g., device type, OS version, app version, language/region)
+	•	Identifiers used for analytics and fraud prevention (e.g., device identifiers as provided by the platform/SDK)
 
-## 3. Sharing of Data
-- **Google Maps APIs:** The App sends route requests (origin/destination/waypoints) to Google Maps services to retrieve directions/geocoding results. These requests may include location coordinates and stop coordinates.
-- We do **not** sell your personal data.
-- We do **not** share your personal data with third parties for advertising.
+Diagnostics
+	•	Crash reports, performance diagnostics, and error logs to improve reliability and fix issues
 
-## 4. Data Storage
-- Stop/route information may be stored locally on your device (e.g., via local storage) so your route persists.
-- If you add cloud sync later, this policy must be updated.
+Optional Permissions
+	•	Camera (to capture media if you choose)
+	•	Photos/Media Library (to upload existing media if you choose)
+	•	Microphone (to record audio/video if you choose)
+	•	Notifications (to send alerts/updates if enabled)
 
-## 5. Your Choices
-- You can deny location permissions, but routing/navigation features may not work.
-- You can disable background location in iOS Settings at any time.
-- You can delete stops/rounds inside the App (local data).
+2. How We Use Information
 
-## 6. Security
-We take reasonable steps to protect data stored on-device. However, no method of storage is 100% secure.
+We use information to:
+	•	Provide core functionality (account access, community features, messaging, uploads)
+	•	Store and deliver user content (including photos/videos) and enable sharing where applicable
+	•	Maintain safety, integrity, and moderation features (where provided)
+	•	Improve the Apps (analytics, feature performance, debugging, crash resolution)
+	•	Provide support and respond to user requests
 
-## 7. Children’s Privacy
-The App is not intended for children under 13 and does not knowingly collect personal information from children.
+3. Service Providers (How Data Is Processed)
 
-## 8. Contact
-If you have questions about this policy, contact: **support@yourdomain.com**
+We use trusted service providers to operate and improve our Apps. Depending on the App, this may include:
 
+Google Firebase
+	•	Firebase Authentication (account sign-in)
+	•	Cloud Firestore / Realtime Database (app data and content such as messages)
+	•	Firebase Storage (media uploads such as photos/videos)
+	•	Firebase Analytics (usage analytics)
+	•	Firebase Crashlytics (crash reporting and diagnostics)
+
+These providers process data on our behalf under their terms and are not permitted to use it for their own advertising for our Apps.
+
+4. Data Sharing
+	•	We do not sell personal information.
+	•	We do not share personal information with third parties for third-party advertising.
+	•	We share data with service providers only as needed to operate app features (e.g., hosting, analytics, crash reporting).
+
+5. Data Storage & Retention
+	•	App data and user content may be stored on secure cloud services to support functionality across devices.
+	•	We retain data for as long as needed to provide the App and for legitimate purposes such as security, preventing abuse, legal compliance, and backups.
+	•	If you delete content or request account deletion, we will take reasonable steps to delete associated data, subject to retention required for legal/security reasons.
+
+6. Your Choices
+	•	You may deny optional permissions (camera/photos/microphone). Some features may not function without them.
+	•	You can typically update certain profile information within the App (where available).
+	•	You may request account deletion or data access by contacting us (see Contact).
+
+7. Security
+
+We use reasonable administrative, technical, and physical safeguards designed to protect information. No system is 100% secure.
+
+8. Children’s Privacy
+
+Our Apps are not intended for children under 13, and we do not knowingly collect personal information from children.
+
+9. Contact
+
+Privacy questions/requests:
+[support@mrvltechnologies.com]
+
+⸻
